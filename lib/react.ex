@@ -8,6 +8,20 @@ defmodule React do
   """
   @spec new(cells :: [cell]) :: {:ok, pid}
   def new(cells) do
+    {:ok, spawn(fn -> system(cells) end)}
+  end
+
+  def system(cells) do
+    receive do
+      {:get_value, cell_name, pid} ->
+        value =
+          Enum.find(cells, fn {_, key, _} ->
+            key == cell_name
+          end)
+          |> Kernel.elem(2)
+
+        send(pid, {:response, value})
+    end
   end
 
   @doc """
@@ -15,6 +29,12 @@ defmodule React do
   """
   @spec get_value(cells :: pid, cell_name :: String.t()) :: any()
   def get_value(cells, cell_name) do
+    send(cells, {:get_value, cell_name, self()})
+
+    receive do
+      {:response, value} ->
+        value
+    end
   end
 
   @doc """
