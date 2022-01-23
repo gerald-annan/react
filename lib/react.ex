@@ -21,6 +21,16 @@ defmodule React do
           |> Kernel.elem(2)
 
         send(pid, {:response, value})
+        system(cells)
+
+      {:set_value, cell_name, value} ->
+        Enum.map(cells, fn {_, key, _} = cell ->
+          case key == cell_name do
+            true -> put_elem(cell, 2, value)
+            false -> cell
+          end
+        end)
+        |> system()
     end
   end
 
@@ -42,6 +52,7 @@ defmodule React do
   """
   @spec set_value(cells :: pid, cell_name :: String.t(), value :: any) :: :ok
   def set_value(cells, cell_name, value) do
+    send(cells, {:set_value, cell_name, value})
   end
 
   @doc """
