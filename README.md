@@ -17,7 +17,7 @@ cells). Implement updates so that when an input value is changed, values
 propagate to reach a new stable system state.
 
 In addition, compute cells should allow for registering change notification
-callbacks.  Call a cell’s callbacks when the cell’s value in a new stable
+callbacks. Call a cell’s callbacks when the cell’s value in a new stable
 state has changed from the previous stable state.
 
 ## Source
@@ -28,5 +28,6 @@ state has changed from the previous stable state.
 
 ### Contributed to by
 
+- @gerald-annan
 - @angelikatyborska
 - @neenjaw
