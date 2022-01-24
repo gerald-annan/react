@@ -12,19 +12,46 @@ defmodule React do
   end
 
   def system(cells) do
-    receive do
-      {:get_value, cell_name, pid} ->
-        value =
-          Enum.find(cells, fn {_, key, _} ->
-            key == cell_name
-          end)
-          |> Kernel.elem(2)
+    find = fn param ->
+      Enum.find(cells, fn cell ->
+        [_, key | _] = Tuple.to_list(cell)
+        key == param
+      end)
+    end
 
+    findm = fn param ->
+      {_, ^param, [input], func} =
+        Enum.find(cells, fn cell ->
+          [_, key | _] = Tuple.to_list(cell)
+          key == param
+        end)
+
+      {_, _, value} = find.(input)
+      func.(value)
+    end
+
+    receive do
+      {:get_value, "input", pid} ->
+        {_, _, value} = find.("input")
         send(pid, {:response, value})
         system(cells)
 
+      {:get_value, "output", pid} ->
+        {_, _, input, func} = find.("output")
+
+        case input do
+          ["input"] ->
+            {_, _, value} = find.("input")
+            send(pid, {:response, func.(value)})
+            system(cells)
+        end
+
+        system(cells)
+
       {:set_value, cell_name, value} ->
-        Enum.map(cells, fn {_, key, _} = cell ->
+        Enum.map(cells, fn cell ->
+          [_, key | _] = Tuple.to_list(cell)
+
           case key == cell_name do
             true -> put_elem(cell, 2, value)
             false -> cell
