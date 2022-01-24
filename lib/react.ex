@@ -44,6 +44,13 @@ defmodule React do
             {_, _, value} = find.("input")
             send(pid, {:response, func.(value)})
             system(cells)
+          ["true", "value"] ->
+            {_, _, condition} = find.("true")
+            {_, _, value} = find.("value")
+            send(pid, {:response, func.(condition, value)})
+            system(cells)
+
+          
         end
 
         system(cells)
