@@ -56,6 +56,12 @@ defmodule React do
             {_, _, two} = find.("two")
             send(pid, {:response, func.(one, two)})
             system(cells)
+
+          ["times_two", "times_thirty"] ->
+            times_two = findm.("times_two")
+            times_thirty = findm.("times_thirty")
+            send(pid, {:response, func.(times_two, times_thirty)})
+            system(cells)
         end
 
         system(cells)
