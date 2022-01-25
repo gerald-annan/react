@@ -3,67 +3,67 @@ defmodule React do
 
   @type cell :: {:input, String.t(), any} | {:output, String.t(), [String.t()], fun()}
 
+  def find(cells, param) do
+    Enum.find(cells, fn cell ->
+      [_, input | _] = Tuple.to_list(cell)
+      input == param
+    end)
+  end
+
+  def react(cells, count \\ 0) do
+    [cell | tail] = cells
+    [param | _] = Tuple.to_list(cell)
+
+    cell_by_value =
+      case param == :input do
+        true ->
+          cell
+
+        false ->
+          [_, type, inputs, func | _] = Tuple.to_list(cell)
+
+          input_values =
+            Enum.map(inputs, fn input ->
+              return = find(cells, input)
+              elem(return, tuple_size(return) - 1)
+            end)
+
+          output_value =
+            if length(input_values) == 1,
+              do: func.(Enum.at(input_values, 0)),
+              else: func.(Enum.at(input_values, 0), Enum.at(input_values, 1))
+
+          {:output, type, inputs, func, output_value}
+      end
+
+    updated_cells = tail ++ [cell_by_value]
+
+    if count < length(cells) do
+      react(updated_cells, count + 1)
+    else
+      updated_cells
+    end
+  end
+
   @doc """
   Start a reactive system
   """
   @spec new(cells :: [cell]) :: {:ok, pid}
   def new(cells) do
-    {:ok, spawn(fn -> system(cells) end)}
+    new_cells = react(cells, 0)
+    {:ok, spawn(fn -> system(new_cells) end)}
   end
 
   def system(cells) do
-    find = fn param ->
-      Enum.find(cells, fn cell ->
-        [_, key | _] = Tuple.to_list(cell)
-        key == param
-      end)
-    end
-
-    findm = fn param ->
-      {_, ^param, [input], func} =
-        Enum.find(cells, fn cell ->
-          [_, key | _] = Tuple.to_list(cell)
-          key == param
-        end)
-
-      {_, _, value} = find.(input)
-      func.(value)
-    end
-
     receive do
       {:get_value, "input", pid} ->
-        {_, _, value} = find.("input")
+        {_, _, value} = find(cells, "input")
         send(pid, {:response, value})
         system(cells)
 
       {:get_value, "output", pid} ->
-        {_, _, input, func} = find.("output")
-
-        case input do
-          ["input"] ->
-            {_, _, value} = find.("input")
-            send(pid, {:response, func.(value)})
-            system(cells)
-
-          ["true", "value"] ->
-            {_, _, condition} = find.("true")
-            {_, _, value} = find.("value")
-            send(pid, {:response, func.(condition, value)})
-            system(cells)
-
-          ["one", "two"] ->
-            {_, _, one} = find.("one")
-            {_, _, two} = find.("two")
-            send(pid, {:response, func.(one, two)})
-            system(cells)
-
-          ["times_two", "times_thirty"] ->
-            times_two = findm.("times_two")
-            times_thirty = findm.("times_thirty")
-            send(pid, {:response, func.(times_two, times_thirty)})
-            system(cells)
-        end
-
+        {_, _, _, _, value} = find(cells, "output")
+        send(pid, {:response, value})
         system(cells)
 
       {:set_value, cell_name, value} ->
@@ -72,6 +72,18 @@ defmodule React do
 
           case key == cell_name do
             true -> put_elem(cell, 2, value)
+            false -> cell
+          end
+        end)
+        |> react()
+        |> system()
+
+      {:add_callback, cell_name, callback_name, callback} ->
+        Enum.map(cells, fn cell ->
+          [_, key | _] = Tuple.to_list(cell)
+
+          case key == cell_name do
+            true -> Tuple.append([callback_name, callback])
             false -> cell
           end
         end)
@@ -110,6 +122,7 @@ defmodule React do
           callback :: fun()
         ) :: :ok
   def add_callback(cells, cell_name, callback_name, callback) do
+    send(cells, {:add_callback, cell_name, callback_name, callback})
   end
 
   @doc """
