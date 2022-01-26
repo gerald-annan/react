@@ -96,22 +96,6 @@ defmodule React do
         |> react()
         |> system()
 
-      {:add_callback, cell_name, callback_name, callback} ->
-        Enum.map(cells, fn cell ->
-          [_, key | _] = Tuple.to_list(cell)
-
-          case key == cell_name do
-            true ->
-              newCell = Tuple.append(cell, [callback_name, callback])
-              IO.inspect(newCell, label: :newCell)
-              newCell
-
-            false ->
-              cell
-          end
-        end)
-        |> system()
-
       {:remove_callback, cell_name, callback_name} ->
         Enum.map(cells, fn cell ->
           [_, key | _] = Tuple.to_list(cell)
