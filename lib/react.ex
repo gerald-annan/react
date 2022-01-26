@@ -3,8 +3,12 @@ defmodule React do
 
   @type cell :: {:input, String.t(), any} | {:output, String.t(), [String.t()], fun()}
 
-  def send_callback(pid),
-    do: fn name, value -> send(pid, {:callback, name, value}) end
+  def find(cells, param) do
+    Enum.find(cells, fn cell ->
+      [_, input | _] = Tuple.to_list(cell)
+      input == param
+    end)
+  end
 
   def react(cells, count \\ 0) do
     [cell | tail] = cells
