@@ -31,11 +31,6 @@ defmodule React do
               elem(return, tuple_size(return) - 1)
             end)
 
-          output_value =
-            if length(input_values) == 1,
-              do: func.(Enum.at(input_values, 0)),
-              else: func.(Enum.at(input_values, 0), Enum.at(input_values, 1))
-
           case rest do
             [] ->
               {:output, type, inputs, func, output_value}
