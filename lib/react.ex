@@ -31,21 +31,17 @@ defmodule React do
               elem(return, tuple_size(return) - 1)
             end)
 
+          output_value =
+            if length(input_values) == 1,
+              do: func.(Enum.at(input_values, 0)),
+              else: func.(Enum.at(input_values, 0), Enum.at(input_values, 1))
+
           case rest do
             [] ->
               {:output, type, inputs, func, output_value}
 
             [_] ->
               {:output, type, inputs, func, output_value}
-
-            [current_value | callbacks] ->
-              if current_value != output_value,
-                do:
-                  Enum.each(callbacks, fn [callback_name, callback] ->
-                    callback.(callback_name, output_value)
-                  end)
-
-              {:output, type, inputs, func, output_value, callbacks}
           end
       end
 
