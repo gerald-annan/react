@@ -42,6 +42,15 @@ defmodule React do
 
             [_] ->
               {:output, type, inputs, func, output_value}
+
+            [current_value | callbacks] ->
+              if current_value != output_value,
+                do:
+                  Enum.each(callbacks, fn [callback_name, callback] ->
+                    callback.(callback_name, output_value)
+                  end)
+
+              {:output, type, inputs, func, output_value, callbacks}
           end
       end
 
