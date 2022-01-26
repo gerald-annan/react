@@ -10,6 +10,9 @@ defmodule React do
     end)
   end
 
+  def send_callback(pid),
+    do: fn name, value -> send(pid, {:callback, name, value}) end
+
   def react(cells, count \\ 0) do
     [cell | tail] = cells
     [param | _] = Tuple.to_list(cell)
