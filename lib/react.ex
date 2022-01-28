@@ -3,17 +3,14 @@ defmodule React do
 
   @type cell :: {:input, String.t(), any} | {:output, String.t(), [String.t()], fun()}
 
-  def find(cells, param) do
+  defp find(cells, param) do
     Enum.find(cells, fn cell ->
       [_, input | _] = Tuple.to_list(cell)
       input == param
     end)
   end
 
-  def send_callback(pid),
-    do: fn name, value -> send(pid, {:callback, name, value}) end
-
-  def react(cells, count \\ 0) do
+  defp react(cells, count \\ 0) do
     [cell | tail] = cells
     [param | _] = Tuple.to_list(cell)
 
@@ -50,7 +47,7 @@ defmodule React do
                     callback.(callback_name, output_value)
                   end)
 
-              {:output, type, inputs, func, output_value, callbacks}
+              List.to_tuple([:output, type, inputs, func | rest])
           end
       end
 
@@ -66,13 +63,8 @@ defmodule React do
   @doc """
   Start a reactive system
   """
-  @spec new(cells :: [cell]) :: {:ok, pid}
-  def new(cells) do
-    new_cells = react(cells, 0)
-    {:ok, spawn(fn -> system(new_cells) end)}
-  end
 
-  def system(cells) do
+  defp system(cells) do
     receive do
       {:get_value, "input", pid} ->
         {_, _, value} = find(cells, "input")
@@ -96,15 +88,27 @@ defmodule React do
         |> react()
         |> system()
 
+      {:add_callback, cell_name, callback_name, callback} ->
+        Enum.map(cells, fn cell ->
+          [_, key | _] = Tuple.to_list(cell)
+
+          case key == cell_name do
+            true ->
+              Tuple.append(cell, [callback_name, callback])
+
+            false ->
+              cell
+          end
+        end)
+        |> system()
+
       {:remove_callback, cell_name, callback_name} ->
         Enum.map(cells, fn cell ->
           [_, key | _] = Tuple.to_list(cell)
 
           case key == cell_name do
             true ->
-              [:output, "output", inputs, func, value | [callbacks]] = Tuple.to_list(cell)
-              IO.inspect(cell, label: :cell)
-              IO.inspect(callbacks, label: :callbacks)
+              [:output, "output", inputs, func, value | callbacks] = Tuple.to_list(cell)
 
               case callbacks do
                 [] ->
@@ -116,8 +120,7 @@ defmodule React do
                       cname != callback_name
                     end)
 
-                  IO.inspect(filtered, label: :filtered)
-                  {:output, "output", inputs, func, value, filtered}
+                  List.to_tuple([:output, "output", inputs, func, value | filtered])
               end
 
             false ->
@@ -170,15 +173,3 @@ defmodule React do
     send(cells, {:remove_callback, cell_name, callback_name})
   end
 end
-
-{:ok, cells} =
-  React.new([
-    {:input, "input", 11},
-    {:output, "output", ["input"], fn a -> a + 1 end}
-  ])
-
-myself = self()
-React.add_callback(cells, "output", "callback1", React.send_callback(myself))
-React.add_callback(cells, "output", "callback2", React.send_callback(myself))
-React.set_value(cells, "input", 31)
-React.remove_callback(cells, "output", "callback1")
