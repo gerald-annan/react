@@ -93,30 +93,23 @@ defmodule React do
         |> react()
         |> system()
 
-      {:remove_callback, cell_name, callback_name} ->
+      {:add_callback, cell_name, callback_name, callback} ->
         Enum.map(cells, fn cell ->
           [_, key | _] = Tuple.to_list(cell)
 
           case key == cell_name do
             true ->
-              [:output, "output", inputs, func, value | callbacks] = Tuple.to_list(cell)
-
-              case callbacks do
-                [] ->
-                  cell
-
-                _ ->
-                  filtered =
-                    Enum.filter(callbacks, fn [cname, _] ->
-                      cname != callback_name
-                    end)
-
-                  List.to_tuple([:output, "output", inputs, func, value | filtered])
-              end
+              Tuple.append(cell, [callback_name, callback])
 
             false ->
               cell
           end
+        end)
+        |> system()
+
+      {:remove_callback, cell_name, callback_name} ->
+        Enum.map(cells, fn cell ->
+          [_, key | _] = Tuple.to_list(cell)
         end)
         |> system()
     end
