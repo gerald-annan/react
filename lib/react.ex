@@ -175,6 +175,5 @@ defmodule React do
   """
   @spec remove_callback(cells :: pid, cell_name :: String.t(), callback_name :: String.t()) :: :ok
   def remove_callback(cells, cell_name, callback_name) do
-    send(cells, {:remove_callback, cell_name, callback_name})
   end
 end
