@@ -63,14 +63,14 @@ defmodule React do
   @doc """
   Start a reactive system
   """
+  @spec new(cells :: [cell]) :: {:ok, pid}
+  def new(cells) do
+    new_cells = react(cells, 0)
+    {:ok, spawn(fn -> system(new_cells) end)}
+  end
 
   defp system(cells) do
     receive do
-      {:get_value, "input", pid} ->
-        {_, _, value} = find(cells, "input")
-        send(pid, {:response, value})
-        system(cells)
-
       {:get_value, "output", pid} ->
         {_, _, _, _, value} = find(cells, "output")
         send(pid, {:response, value})
