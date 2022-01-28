@@ -76,6 +76,11 @@ defmodule React do
         send(pid, {:response, value})
         system(cells)
 
+      {:get_value, "output", pid} ->
+        {_, _, _, _, value} = find(cells, "output")
+        send(pid, {:response, value})
+        system(cells)
+
       {:set_value, cell_name, value} ->
         Enum.map(cells, fn cell ->
           [_, key | _] = Tuple.to_list(cell)
@@ -86,20 +91,6 @@ defmodule React do
           end
         end)
         |> react()
-        |> system()
-
-      {:add_callback, cell_name, callback_name, callback} ->
-        Enum.map(cells, fn cell ->
-          [_, key | _] = Tuple.to_list(cell)
-
-          case key == cell_name do
-            true ->
-              Tuple.append(cell, [callback_name, callback])
-
-            false ->
-              cell
-          end
-        end)
         |> system()
 
       {:remove_callback, cell_name, callback_name} ->
