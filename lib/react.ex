@@ -71,8 +71,8 @@ defmodule React do
 
   defp system(cells) do
     receive do
-      {:get_value, "output", pid} ->
-        {_, _, _, _, value} = find(cells, "output")
+      {:get_value, "input", pid} ->
+        {_, _, value} = find(cells, "input")
         send(pid, {:response, value})
         system(cells)
 
